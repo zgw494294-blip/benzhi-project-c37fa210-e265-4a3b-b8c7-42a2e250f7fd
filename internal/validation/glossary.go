@@ -17,8 +17,12 @@ func validateGlossary(r domain.CaptionRevision, terms []domain.GlossaryTerm, add
 				needle = strings.ToLower(needle)
 				required = strings.ToLower(required)
 			}
-			if strings.Contains(source, needle) && !strings.Contains(translated, required) {
+			sourceHit := strings.Contains(source, needle)
+			if sourceHit && !strings.Contains(translated, required) {
 				add("TERM_REQUIRED", domain.SeverityBlocking, cue.Sequence, "原文命中术语但译文未使用规定译法", fmt.Sprintf("source=%q required=%q", term.SourceText, term.RequiredTranslation))
+			}
+			if !sourceHit {
+				continue
 			}
 			for _, forbidden := range term.ForbiddenTranslations {
 				candidate := forbidden
