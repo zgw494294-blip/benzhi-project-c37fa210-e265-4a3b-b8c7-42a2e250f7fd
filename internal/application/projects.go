@@ -71,6 +71,7 @@ func (a *Service) AddTerm(projectID string, c TermCommand) (domain.GlossaryTerm,
 		sort.Slice(old, func(i, j int) bool { return strings.ToLower(old[i].SourceText) < strings.ToLower(old[j].SourceText) })
 		s.Terms[projectID] = append(s.Terms[projectID], old...)
 		p.GlossaryVersion = next
+		repointCurrentRevision(s, &p, a.now())
 		p.Touch(a.now())
 		s.Projects[projectID] = p
 		out = term

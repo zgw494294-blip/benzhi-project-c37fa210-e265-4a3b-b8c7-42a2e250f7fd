@@ -104,6 +104,7 @@ func (a *Service) ImportGlossary(projectID string, c BatchGlossaryCommand) (Batc
 		})
 		s.Terms[projectID] = append(s.Terms[projectID], next...)
 		p.GlossaryVersion = nextVersion
+		repointCurrentRevision(s, &p, now)
 		p.Touch(now)
 		s.Projects[projectID] = p
 		out = BatchGlossaryResult{GlossaryVersion: nextVersion, ImportedCount: len(imported), TotalCount: len(next), Entries: imported}

@@ -80,6 +80,30 @@ func findRevision(s store.Snapshot, projectID, revisionID string) (domain.Captio
 	}
 	return domain.CaptionRevision{}, domain.ErrNotFound
 }
+
+// repointCurrentRevision adapts the current revision to a freshly bumped
+// glossary version so that the next validation of that revision produces a
+// run whose glossary version still matches the project. The previous effective
+// validation was computed against the now-superseded glossary version, so it is
+// dropped together with the project's validated status. After this the project
+// is back in a draft-like state where translators may either revalidate the
+// current revision against the new glossary version or submit a replacement
+// revision, mirroring how rule updates invalidate validation results.
+func repointCurrentRevision(s *store.Snapshot, p *domain.CaptionProject, now time.Time) {
+	if p.CurrentRevisionID == "" {
+		return
+	}
+	delete(s.Validations, p.CurrentRevisionID)
+	if p.Status == domain.StatusValidated {
+		p.Status = domain.StatusDraft
+	}
+	for i := range s.Revisions[p.ID] {
+		if s.Revisions[p.ID][i].ID == p.CurrentRevisionID {
+			s.Revisions[p.ID][i].GlossaryVersion = p.GlossaryVersion
+			break
+		}
+	}
+}
 func latestReview(s store.Snapshot, projectID, revisionID string) (domain.ReviewDecision, error) {
 	items := s.Reviews[projectID]
 	for i := len(items) - 1; i >= 0; i-- {
