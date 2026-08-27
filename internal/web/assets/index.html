@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>字幕定稿工作台</title>
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <p class="eyebrow">StageCaption Finalizer</p>
+      <h1>剧场字幕定稿工作台</h1>
+    </div>
+    <span id="status" role="status" aria-live="polite">未选择项目</span>
+  </header>
+
+  <main>
+    <section class="panel" aria-labelledby="project-heading">
+      <h2 id="project-heading">项目与演出规则</h2>
+      <form id="create">
+        <label>项目标题<input name="title" placeholder="例如：春季巡演终稿" required></label>
+        <label>源语言<input name="sourceLanguage" value="en" required></label>
+        <label>目标语言<input name="targetLanguage" value="zh" required></label>
+        <label>帧率<input name="frameRate" type="number" step="0.001" value="25" required></label>
+        <label>最短显示（毫秒）<input name="minDisplayMillis" type="number" value="500" required></label>
+        <label>最长显示（毫秒）<input name="maxDisplayMillis" type="number" value="5000" required></label>
+        <button type="submit">建立项目</button>
+      </form>
+      <label class="wide">切换项目<select id="projects"><option value="">选择已有项目</option></select></label>
+      <form id="rules">
+        <label>项目标题<input name="title" placeholder="项目标题" required></label>
+        <label>源语言<input name="sourceLanguage" placeholder="源语言" required></label>
+        <label>目标语言<input name="targetLanguage" placeholder="目标语言" required></label>
+        <label>帧率<input name="frameRate" type="number" step="0.001" required></label>
+        <label>最短显示（毫秒）<input name="minDisplayMillis" type="number" required></label>
+        <label>最长显示（毫秒）<input name="maxDisplayMillis" type="number" required></label>
+        <button type="submit">更新规则</button>
+      </form>
+      <p id="validationHint" class="notice"></p>
+    </section>
+
+    <section class="panel" aria-labelledby="glossary-heading">
+      <h2 id="glossary-heading">术语批量导入</h2>
+      <p class="helper">为当前项目登记必用译法、禁用译法与大小写策略。</p>
+      <textarea id="termBatch" rows="5" aria-label="术语 JSON" placeholder='JSON 数组，例如 [{"sourceText":"King","requiredTranslation":"王","forbiddenTranslations":["国王"],"caseSensitive":false}]'></textarea>
+      <button id="importTerms" type="button">原子导入</button>
+      <p id="glossaryVersion" class="meta"></p>
+      <ul id="terms" class="record-list"></ul>
+    </section>
+
+    <section class="panel" aria-labelledby="revision-heading">
+      <h2 id="revision-heading">字幕修订与版本差异</h2>
+      <label class="wide">修订摘要<input id="revisionSummary" placeholder="说明本次字幕调整"></label>
+      <label class="wide">完整字幕内容<textarea id="cues" rows="7" placeholder="每行：序号|入点毫秒|出点毫秒|原文|译文|speaker"></textarea></label>
+      <div class="actions">
+        <button id="submitRevision" type="button">提交修订</button>
+        <button id="showDiff" type="button" class="secondary">查看父子差异</button>
+      </div>
+      <h3>修订记录</h3>
+      <pre id="revisions">尚无修订</pre>
+      <h3>差异结果</h3>
+      <pre id="diff">选择两个相邻修订后查看差异</pre>
+    </section>
+
+    <section class="panel" aria-labelledby="validation-heading">
+      <h2 id="validation-heading">校验与批量整改</h2>
+      <div class="actions">
+        <button id="validate" type="button">执行校验</button>
+        <label>级别<select id="severity"><option value="">全部级别</option><option value="blocking">阻断</option><option value="warning">提示</option></select></label>
+        <label>规则<input id="ruleCode" placeholder="ruleCode"></label>
+        <label>状态<select id="findingStatus"><option value="">全部状态</option><option value="open">待处理</option><option value="resolved">已关闭</option></select></label>
+        <button id="filterFindings" type="button" class="secondary">筛选</button>
+      </div>
+      <div id="findings" class="record-list">尚未执行校验</div>
+      <label class="wide">整改说明<input id="resolutionNote" placeholder="说明所选问题的处理方式"></label>
+      <button id="resolveBatch" type="button">批量关闭所选问题</button>
+      <div class="actions">
+        <button id="compareRuns" type="button" class="secondary">比较最近两次校验</button>
+        <button id="sendReview" type="button">送交复核</button>
+      </div>
+      <pre id="runDiff">尚无校验差异</pre>
+    </section>
+
+    <section class="panel" aria-labelledby="review-heading">
+      <h2 id="review-heading">独立复核与意见时间线</h2>
+      <div class="actions">
+        <button id="reviewDetail" type="button" class="secondary">加载复核上下文</button>
+        <label>校审员<input id="reviewer" value="校审员" placeholder="reviewer"></label>
+        <label class="grow">决定理由<input id="returnReason" placeholder="批准说明或退回理由"></label>
+        <button id="approve" type="button">批准</button>
+        <button id="returnReview" type="button" class="danger">退回</button>
+      </div>
+      <pre id="reviewContext">送审后可加载当前修订、问题和历史决定</pre>
+    </section>
+
+    <section class="panel" aria-labelledby="freeze-heading">
+      <h2 id="freeze-heading">冻结、分项导出与核验</h2>
+      <div class="actions">
+        <button id="previewFreeze" type="button" class="secondary">预览冻结清单</button>
+        <button id="freeze" type="button">确认冻结</button>
+        <button id="verify" type="button" class="secondary">完整性核验</button>
+      </div>
+      <pre id="freezePreview">批准当前修订后可预览冻结清单</pre>
+      <pre id="verification">冻结后可重新计算摘要并核验</pre>
+      <nav id="downloads" class="downloads" aria-label="冻结导出" hidden>
+        <a data-kind="captions">下载字幕</a>
+        <a data-kind="glossary">下载术语附录</a>
+        <a data-kind="audit">下载审计记录</a>
+      </nav>
+    </section>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>
